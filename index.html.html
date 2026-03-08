@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocReady — Mortgage Document Collector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1c2e;
+    --navy-mid: #162440;
+    --navy-light: #1e3257;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --cream: #f5f0e8;
+    --cream-dark: #ede5d4;
+    --text: #0f1c2e;
+    --muted: #6b7a8d;
+    --green: #2d8a5e;
+    --green-bg: #e8f5ee;
+    --red: #c0392b;
+    --red-bg: #fdecea;
+    --amber: #b8860b;
+    --amber-bg: #fdf6e3;
+    --border: #ddd5c4;
+    --white: #ffffff;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(15,28,46,0.10);
+    --shadow-lg: 0 12px 48px rgba(15,28,46,0.16);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--navy);
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--gold);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--navy);
+    font-weight: bold;
+  }
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+  .logo-text span { color: var(--gold); }
+  .header-badge {
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold-light);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* TOP NAV */
+  .top-nav {
+    background: var(--navy-mid);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .top-nav-tab {
+    padding: 11px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    user-select: none;
+  }
+  .top-nav-tab:hover { color: rgba(255,255,255,0.85); }
+  .top-nav-tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
+  .top-nav-tab .nav-count {
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  /* MAIN VIEW */
+  .main-view { display: none; }
+  .main-view.active { display: block; }
+
+  /* LAYOUT */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* STEPS NAV */
+  .steps-nav {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 40px;
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .step-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .step-tab:last-child { border-right: none; }
+  .step-tab.active {
+    background: var(--navy);
+  }
+  .step-tab.done {
+    background: var(--navy-mid);
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--cream-dark);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .step-tab.active .step-num {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .step-tab.done .step-num {
+    background: var(--green);
+    color: white;
+  }
+  .step-tab.done .step-num::after { content: '✓'; font-size: 13px; }
+  .step-tab.done .step-num-inner { display: none; }
+  .step-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .step-tab.active .step-label,
+  .step-tab.done .step-label { color: rgba(255,255,255,0.85); }
+
+  /* PANELS */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .panel-sub {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  /* FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  input, select, textarea {
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(15,28,46,0.08);
+  }
+  select { cursor: pointer; }
+
+  /* DOCUMENT UPLOAD SECTION */
+  .doc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .doc-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .doc-card:hover { border-color: var(--navy-light); box-shadow: var(--shadow); }
+  .doc-card.has-file {
+    border-color: var(--green);
+    background: var(--green-bg);
+  }
+  .doc-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .doc-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--cream-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .doc-card.has-file .doc-icon { background: rgba(45,138,94,0.15); }
+  .doc-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-required { background: #fff0e0; color: #b86a00; }
+  .badge-uploaded { background: var(--green-bg); color: var(--green); }
+  .doc-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .doc-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .upload-btn {
+    width: 100%;
+    padding: 9px;
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    background: var(--cream);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .upload-btn:hover { border-color: var(--navy); color: var(--navy); background: var(--cream-dark); }
+  .doc-card.has-file .upload-btn {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(45,138,94,0.05);
+  }
+  .file-name {
+    font-size: 12px;
+    color: var(--green);
+    margin-top: 8px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    word-break: break-all;
+  }
+  .doc-card.has-file .file-name { display: flex; }
+  input[type="file"] { display: none; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: var(--white);
+  }
+  .btn-primary:hover { background: var(--navy-mid); box-shadow: 0 4px 16px rgba(15,28,46,0.25); transform: translateY(-1px); }
+  .btn-gold {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .btn-gold:hover { background: var(--gold-light); box-shadow: 0 4px 16px rgba(201,168,76,0.35); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: var(--navy);
+    border: 1.5px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--navy); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  /* AI ANALYSIS */
+  .ai-panel {
+    background: var(--navy);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-panel::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .ai-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .ai-dot.done { animation: none; background: var(--green); }
+  .ai-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--white);
+  }
+  .ai-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
+
+  .ai-progress-bar {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    height: 4px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .ai-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  .ai-log {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    font-family: 'DM Sans', monospace;
+    min-height: 20px;
+    margin-bottom: 4px;
+  }
+  .ai-log-item { margin-bottom: 4px; }
+  .ai-log-item.ok { color: #5dd99a; }
+  .ai-log-item.warn { color: #ffd96a; }
+  .ai-log-item.err { color: #ff8a7a; }
+
+  /* RESULTS */
+  .results-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .score-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: bold;
+    flex-shrink: 0;
+    border: 4px solid;
+  }
+  .score-ring.high { border-color: var(--green); color: var(--green); }
+  .score-ring.mid { border-color: var(--amber); color: var(--amber); }
+  .score-ring.low { border-color: var(--red); color: var(--red); }
+
+  .results-summary h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--navy);
+  }
+  .results-summary p { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .check-item {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .check-item.ok { border-color: var(--green); }
+  .check-item.warn { border-color: #e8c060; background: var(--amber-bg); }
+  .check-item.missing { border-color: #e89090; background: var(--red-bg); }
+  .check-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .check-item.ok .check-icon { background: var(--green-bg); color: var(--green); }
+  .check-item.warn .check-icon { background: #fff3cc; color: var(--amber); }
+  .check-item.missing .check-icon { background: #fde8e8; color: var(--red); }
+  .check-body { flex: 1; }
+  .check-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 3px;
+  }
+  .check-detail {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .check-item.warn .check-detail { color: #8a6a00; }
+  .check-item.missing .check-detail { color: #9a3030; }
+
+  .notes-box {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .notes-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: var(--gold-light);
+  }
+  .notes-box p { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.7; }
+
+  /* CLIENT INFO BAR */
+  .client-bar {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+  }
+  .client-bar-item { display: flex; flex-direction: column; }
+  .client-bar-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .client-bar-val { font-size: 15px; font-weight: 600; color: var(--navy); margin-top: 2px; }
+  .client-bar-divider { width: 1px; height: 36px; background: var(--border); }
+
+  /* DASHBOARD */
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--navy);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-sub { font-size: 12px; color: var(--muted); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.amber .stat-value { color: var(--amber); }
+  .stat-card.red .stat-value { color: var(--red); }
+
+  .dash-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .filter-tab {
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .filter-tab:hover { border-color: var(--navy); color: var(--navy); }
+  .filter-tab.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
+  .dash-search {
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    width: 200px;
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .dash-search:focus { border-color: var(--navy); }
+
+  .client-table {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .table-head {
+    display: grid;
+    grid-template-columns: 1.8fr 1.2fr 70px 110px 140px 110px 90px;
+    gap: 0;
+    background: var(--navy);
+    padding: 12px 20px;
+  }
+  .th {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .table-row {
+    display: grid;
+    grid-template-columns: 1.8fr 1.2fr 70px 110px 140px 110px 90px;
+    gap: 0;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: var(--cream); }
+  .td { font-size: 14px; color: var(--text); }
+  .td-name { font-weight: 600; color: var(--navy); }
+  .td-muted { color: var(--muted); font-size: 13px; }
+  .td-score {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    font-weight: bold;
+  }
+  .td-score.high { color: var(--green); }
+  .td-score.mid { color: var(--amber); }
+  .td-score.low { color: var(--red); }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .status-pill.complete { background: var(--green-bg); color: var(--green); }
+  .status-pill.action { background: var(--amber-bg); color: var(--amber); }
+  .status-pill.incomplete { background: var(--red-bg); color: var(--red); }
+
+  /* WORKFLOW STATUS PILLS */
+  .ws-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .ws-under-review   { background: #e8f0ff; color: #3355cc; }
+  .ws-docs-requested { background: #fff3e0; color: #c06000; }
+  .ws-docs-received  { background: #e8f5ee; color: var(--green); }
+  .ws-submitted      { background: #f0e8ff; color: #7030c0; }
+  .ws-approved       { background: #e8f5ee; color: var(--green); border: 1.5px solid var(--green); }
+  .ws-declined       { background: var(--red-bg); color: var(--red); }
+
+  .status-select {
+    padding: 5px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+    background: var(--white);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .status-select:focus { border-color: var(--navy); }
+
+  .email-tracker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .email-tracker.sent { background: #e8f0ff; border-color: #b0c4ff; color: #3355cc; }
+
+  .td-action {
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    opacity: 0.6;
+  }
+  .table-row:hover .td-action { opacity: 1; }
+
+  .empty-dash {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--muted);
+  }
+  .empty-dash .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-dash h3 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--navy); margin-bottom: 8px; }
+  .empty-dash p { font-size: 14px; line-height: 1.6; }
+
+  /* CLIENT MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,28,46,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--cream);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-header {
+    background: var(--navy);
+    padding: 24px 28px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--white);
+  }
+  .modal-header p { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+  .modal-close {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.2); }
+  .modal-body { padding: 28px; }
+
+  @media (max-width: 640px) {
+    .form-grid, .doc-grid { grid-template-columns: 1fr; }
+    .steps-nav { flex-direction: column; }
+    .step-tab { border-right: none; border-bottom: 1px solid var(--border); }
+    header { padding: 0 20px; }
+    .container { padding: 24px 16px 60px; }
+    .client-bar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">D</div>
+    <div class="logo-text">Doc<span>Ready</span></div>
+  </div>
+  <div class="header-badge" onclick="openSettings()" style="cursor:pointer">⚙ Settings</div>
+</header>
+
+<nav class="top-nav">
+  <div class="top-nav-tab active" id="nav-intake" onclick="switchView('intake')">📋 New Client</div>
+  <div class="top-nav-tab" id="nav-dashboard" onclick="switchView('dashboard')">
+    📊 Client Dashboard <span class="nav-count" id="navCount">0</span>
+  </div>
+</nav>
+
+<!-- DASHBOARD VIEW -->
+<div class="main-view" id="view-dashboard">
+  <div class="container">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+      <div>
+        <div class="panel-title">Client Dashboard</div>
+        <div class="panel-sub">All reviewed clients and their document status at a glance.</div>
+      </div>
+      <button class="btn btn-primary" onclick="switchView('intake')">+ New Client</button>
+    </div>
+
+    <div class="dash-stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Clients</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub">reviewed so far</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Ready to Submit</div>
+        <div class="stat-value" id="statReady">0</div>
+        <div class="stat-sub">score ≥ 80%</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Needs Attention</div>
+        <div class="stat-value" id="statAttention">0</div>
+        <div class="stat-sub">score 50–79%</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Incomplete</div>
+        <div class="stat-value" id="statIncomplete">0</div>
+        <div class="stat-sub">score &lt; 50%</div>
+      </div>
+    </div>
+
+    <div class="dash-toolbar">
+      <div class="filter-tabs">
+        <div class="filter-tab active" onclick="setFilter('all', this)">All</div>
+        <div class="filter-tab" onclick="setFilter('complete', this)">✓ Ready</div>
+        <div class="filter-tab" onclick="setFilter('action', this)">⚠ Attention</div>
+        <div class="filter-tab" onclick="setFilter('incomplete', this)">✕ Incomplete</div>
+      </div>
+      <input class="dash-search" type="text" placeholder="🔍  Search clients…" oninput="renderDashboard()" id="dashSearch">
+    </div>
+
+    <div class="client-table">
+      <div class="table-head">
+        <div class="th">Client</div>
+        <div class="th">Loan Purpose</div>
+        <div class="th">Score</div>
+        <div class="th">Doc Status</div>
+        <div class="th">Workflow</div>
+        <div class="th">Last Emailed</div>
+        <div class="th"></div>
+      </div>
+      <div id="dashTableBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT DETAIL MODAL -->
+<div class="modal-overlay" id="clientModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalName">—</h2>
+        <p id="modalMeta">—</p>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('clientModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal" onclick="closeSettingsModal(event)">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <h2>⚙ Settings</h2>
+        <p>Configure your DocReady API connection</p>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('settingsModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--amber-bg);border:1px solid #e8c060;border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#7a5800;line-height:1.6;">
+        ⚠ Your API key is stored only in your browser and never sent to GitHub or shared with anyone else. Each person using the app needs to enter their own key.
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Anthropic API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="font-family:monospace;font-size:13px" />
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveApiKey()" style="flex:1">Save Key</button>
+        <button class="btn btn-outline" onclick="clearApiKey()" style="color:var(--red);border-color:var(--red)">Clear</button>
+      </div>
+      <div id="apiKeyStatus" style="margin-top:12px;font-size:13px;text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INTAKE VIEW -->
+<div class="main-view active" id="view-intake">
+<div class="container">
+
+  <!-- STEP NAV -->
+  <div class="steps-nav">
+    <div class="step-tab active" id="tab-1" onclick="goToStep(1)">
+      <div class="step-num"><span class="step-num-inner">1</span></div>
+      <div class="step-label">Client Details</div>
+    </div>
+    <div class="step-tab" id="tab-2" onclick="goToStep(2)">
+      <div class="step-num"><span class="step-num-inner">2</span></div>
+      <div class="step-label">Upload Documents</div>
+    </div>
+    <div class="step-tab" id="tab-3" onclick="goToStep(3)">
+      <div class="step-num"><span class="step-num-inner">3</span></div>
+      <div class="step-label">AI Review</div>
+    </div>
+    <div class="step-tab" id="tab-4" onclick="goToStep(4)">
+      <div class="step-num"><span class="step-num-inner">4</span></div>
+      <div class="step-label">Results</div>
+    </div>
+  </div>
+
+  <!-- STEP 1: CLIENT DETAILS -->
+  <div class="panel active" id="panel-1">
+    <div class="panel-title">New Client Intake</div>
+    <div class="panel-sub">Enter the applicant's basic details before collecting their documents.</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>First Name</label>
+        <input type="text" id="firstName" placeholder="e.g. Sarah" />
+      </div>
+      <div class="form-group">
+        <label>Last Name</label>
+        <input type="text" id="lastName" placeholder="e.g. Johnson" />
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="sarah@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="phone" placeholder="+61 4xx xxx xxx" />
+      </div>
+      <div class="form-group">
+        <label>Loan Purpose</label>
+        <select id="loanPurpose">
+          <option value="">Select purpose...</option>
+          <option>Owner Occupied Purchase</option>
+          <option>Investment Purchase</option>
+          <option>Refinance</option>
+          <option>Construction</option>
+          <option>Bridging Loan</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Employment Type</label>
+        <select id="employmentType">
+          <option value="">Select type...</option>
+          <option>PAYG Full-time</option>
+          <option>PAYG Part-time / Casual</option>
+          <option>Self-Employed</option>
+          <option>Contractor</option>
+          <option>Retired / Investment Income</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Notes (optional)</label>
+        <textarea id="notes" rows="3" placeholder="Any special circumstances, complex income, second applicant, etc."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <div></div>
+      <button class="btn btn-primary" onclick="goToStep(2)">Continue to Documents →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: UPLOAD DOCUMENTS -->
+  <div class="panel" id="panel-2">
+    <div class="panel-title">Upload Documents</div>
+    <div class="panel-sub">Upload what you have — our AI will flag anything missing or incomplete.</div>
+
+    <div class="doc-grid">
+      <!-- Payslips -->
+      <div class="doc-card" id="card-payslips">
+        <div class="doc-card-header">
+          <div class="doc-icon">💰</div>
+          <span class="doc-badge badge-required" id="badge-payslips">Required</span>
+        </div>
+        <div class="doc-title">Payslips</div>
+        <div class="doc-hint">Last 2 payslips. Must show employer name, gross income & date.</div>
+        <div class="upload-btn" onclick="document.getElementById('file-payslips').click()">
+          ↑ Upload file
+        </div>
+        <input type="file" id="file-payslips" accept=".pdf,.jpg,.jpeg,.png" onchange="handleUpload('payslips', this)">
+        <div class="file-name" id="fname-payslips">✓ <span></span></div>
+      </div>
+
+      <!-- Bank Statements -->
+      <div class="doc-card" id="card-bank">
+        <div class="doc-card-header">
+          <div class="doc-icon">🏦</div>
+          <span class="doc-badge badge-required" id="badge-bank">Required</span>
+        </div>
+        <div class="doc-title">Bank Statements</div>
+        <div class="doc-hint">3 months of statements. Must show account name, BSB & all transactions.</div>
+        <div class="upload-btn" onclick="document.getElementById('file-bank').click()">
+          ↑ Upload file
+        </div>
+        <input type="file" id="file-bank" accept=".pdf,.jpg,.jpeg,.png" onchange="handleUpload('bank', this)">
+        <div class="file-name" id="fname-bank">✓ <span></span></div>
+      </div>
+
+      <!-- Tax Documents -->
+      <div class="doc-card" id="card-tax">
+        <div class="doc-card-header">
+          <div class="doc-icon">📋</div>
+          <span class="doc-badge badge-required" id="badge-tax">Required</span>
+        </div>
+        <div class="doc-title">Tax Documents</div>
+        <div class="doc-hint">Most recent Notice of Assessment or tax return (last 2 years if self-employed).</div>
+        <div class="upload-btn" onclick="document.getElementById('file-tax').click()">
+          ↑ Upload file
+        </div>
+        <input type="file" id="file-tax" accept=".pdf,.jpg,.jpeg,.png" onchange="handleUpload('tax', this)">
+        <div class="file-name" id="fname-tax">✓ <span></span></div>
+      </div>
+
+      <!-- ID -->
+      <div class="doc-card" id="card-id">
+        <div class="doc-card-header">
+          <div class="doc-icon">🪪</div>
+          <span class="doc-badge badge-required" id="badge-id">Required</span>
+        </div>
+        <div class="doc-title">Photo ID</div>
+        <div class="doc-hint">Passport or driver's licence. Must be current, clear and unobstructed.</div>
+        <div class="upload-btn" onclick="document.getElementById('file-id').click()">
+          ↑ Upload file
+        </div>
+        <input type="file" id="file-id" accept=".pdf,.jpg,.jpeg,.png" onchange="handleUpload('id', this)">
+        <div class="file-name" id="fname-id">✓ <span></span></div>
+      </div>
+
+      <!-- Employment Letter -->
+      <div class="doc-card" id="card-employment">
+        <div class="doc-card-header">
+          <div class="doc-icon">📄</div>
+          <span class="doc-badge badge-required" id="badge-employment">Required</span>
+        </div>
+        <div class="doc-title">Employment Letter</div>
+        <div class="doc-hint">Signed letter from employer confirming role, start date & income type.</div>
+        <div class="upload-btn" onclick="document.getElementById('file-employment').click()">
+          ↑ Upload file
+        </div>
+        <input type="file" id="file-employment" accept=".pdf,.jpg,.jpeg,.png" onchange="handleUpload('employment', this)">
+        <div class="file-name" id="fname-employment">✓ <span></span></div>
+      </div>
+
+      <!-- Placeholder / extra -->
+      <div class="doc-card" id="card-other" style="border-style:dashed; background: transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; text-align:center;">
+        <div style="font-size:28px; margin-bottom:8px; opacity:0.3;">+</div>
+        <div style="font-size:13px; color:var(--muted); font-weight:500;">Additional documents<br>can be added here</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
+      <button class="btn btn-gold" onclick="startAnalysis()" id="analyseBtn">✦ Run AI Review</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: AI REVIEW -->
+  <div class="panel" id="panel-3">
+    <div class="ai-panel">
+      <div class="ai-header">
+        <div class="ai-dot" id="aiDot"></div>
+        <div class="ai-title" id="aiTitle">Analysing documents…</div>
+      </div>
+      <div class="ai-sub" id="aiSub">DocReady AI is reviewing your client's uploaded files</div>
+      <div class="ai-progress-bar">
+        <div class="ai-progress-fill" id="aiProgress"></div>
+      </div>
+      <div class="ai-log" id="aiLog"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goToStep(2)">← Back</button>
+      <button class="btn btn-primary" id="viewResultsBtn" onclick="goToStep(4)" disabled>View Results →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: RESULTS -->
+  <div class="panel" id="panel-4">
+    <div class="panel-title">Review Summary</div>
+    <div class="panel-sub">AI-generated completeness report for this client.</div>
+
+    <div class="client-bar" id="clientBar"></div>
+    <div class="results-header">
+      <div class="score-ring" id="scoreRing">–</div>
+      <div class="results-summary">
+        <h2 id="resultHeadline">–</h2>
+        <p id="resultSub">–</p>
+      </div>
+    </div>
+    <div class="checklist" id="checklist"></div>
+    <div class="notes-box" id="notesBox" style="display:none">
+      <h3>✦ Broker Notes</h3>
+      <p id="notesBoxContent"></p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goToStep(2)">← Upload More</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="switchView('dashboard')">📊 View Dashboard</button>
+        <button class="btn btn-primary" onclick="startNew()">+ New Client</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end view-intake -->
+
+<script>
+const uploadedFiles = {};
+let clientData = {};
+let analysisResults = null;
+let allClients = [];
+let activeFilter = 'all';
+
+// ── SUPABASE CONFIG ─────────────────────────────────────
+const SUPABASE_URL = 'https://sqixfybmpzlhesrbceqb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxaXhmeWJtcHpsaGVzcmJjZXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDUyNzMsImV4cCI6MjA4ODUyMTI3M30.1MLSNxdrbPrdbH_s81K9FnSB766h1jhuZI_FH48CTzI';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      ...(options.headers || {})
+    }
+  });
+  if (res.status === 204 || res.headers.get('content-length') === '0') return {};
+  const text = await res.text();
+  if (!text) return {};
+  try { return JSON.parse(text); } catch(e) { return {}; }
+}
+
+async function saveClientToDb(client) {
+  return sbFetch('/rest/v1/Clients', {
+    method: 'POST',
+    headers: { 'Prefer': 'return=representation' },
+    body: JSON.stringify({
+      'First Name': client.firstName,
+      'Last Name': client.lastName,
+      'Email': client.email || '',
+      'Phone': client.phone || '',
+      'Loan Purpose': client.loanPurpose || '',
+      'Employment Type': client.employmentType || '',
+      'Notes': client.notes || '',
+      'Score': client.score,
+      'Headline': client.results.headline || '',
+      'Summary': client.results.summary || '',
+      'Broker Note': client.results.brokerNote || '',
+      'Items': client.results.items || [],
+      'Reviewed At': client.date,
+      'Status': 'Under Review',
+      'Last Email Sent': ''
+    })
+  });
+}
+
+async function updateClientField(id, fields) {
+  return sbFetch(`/rest/v1/Clients?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { 'Prefer': 'return=minimal' },
+    body: JSON.stringify(fields)
+  });
+}
+
+async function loadClientsFromDb() {
+  const data = await sbFetch('/rest/v1/Clients?select=*&order=created_at.desc');
+  if (!Array.isArray(data)) {
+    console.error('Supabase load error:', JSON.stringify(data).slice(0, 200));
+    return;
+  }
+  allClients = data.map(r => ({
+    id: r.id,
+    firstName: r['First Name'],
+    lastName: r['Last Name'],
+    email: r['Email'],
+    phone: r['Phone'],
+    loanPurpose: r['Loan Purpose'],
+    employmentType: r['Employment Type'],
+    notes: r['Notes'],
+    score: r['Score'],
+    date: r['Reviewed At'],
+    status: r['Status'] || 'Under Review',
+    lastEmailSent: r['Last Email Sent'] || '',
+    results: {
+      overallScore: r['Score'],
+      headline: r['Headline'],
+      summary: r['Summary'],
+      brokerNote: r['Broker Note'],
+      items: r['Items']
+    }
+  }));
+  document.getElementById('navCount').textContent = allClients.length;
+}
+
+// ── VIEW SWITCHING ──────────────────────────────────────
+function switchView(view) {
+  document.querySelectorAll('.main-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.getElementById('nav-intake').classList.toggle('active', view === 'intake');
+  document.getElementById('nav-dashboard').classList.toggle('active', view === 'dashboard');
+  if (view === 'dashboard') {
+    loadClientsFromDb().then(() => renderDashboard());
+  }
+}
+
+// ── DASHBOARD ───────────────────────────────────────────
+function workflowEmoji(s) {
+  const map = { 'Under Review': '📋', 'Docs Requested': '📧', 'Docs Received': '📁', 'Submitted to Lender': '🏦', 'Approved': '✅', 'Declined': '❌' };
+  return map[s] || '📋';
+}
+function workflowClass(s) {
+  const map = { 'Under Review': 'ws-under-review', 'Docs Requested': 'ws-docs-requested', 'Docs Received': 'ws-docs-received', 'Submitted to Lender': 'ws-submitted', 'Approved': 'ws-approved', 'Declined': 'ws-declined' };
+  return map[s] || 'ws-under-review';
+}
+
+async function updateStatus(idx, newStatus) {
+  const c = allClients[idx];
+  if (!c || !c.id) return;
+  c.status = newStatus;
+  await updateClientField(c.id, { 'Status': newStatus });
+}
+
+function scoreStatus(score) {
+  if (score >= 80) return 'complete';
+  if (score >= 50) return 'action';
+  return 'incomplete';
+}
+function statusLabel(s) {
+  return s === 'complete' ? '✓ Ready' : s === 'action' ? '⚠ Attention' : '✕ Incomplete';
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const search = (document.getElementById('dashSearch')?.value || '').toLowerCase();
+  const body = document.getElementById('dashTableBody');
+
+  // Stats
+  const total = allClients.length;
+  const ready = allClients.filter(c => scoreStatus(c.score) === 'complete').length;
+  const attn = allClients.filter(c => scoreStatus(c.score) === 'action').length;
+  const inc = allClients.filter(c => scoreStatus(c.score) === 'incomplete').length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statReady').textContent = ready;
+  document.getElementById('statAttention').textContent = attn;
+  document.getElementById('statIncomplete').textContent = inc;
+  document.getElementById('navCount').textContent = total;
+
+  if (!total) {
+    body.innerHTML = `<div class="empty-dash">
+      <div class="empty-icon">📁</div>
+      <h3>No clients reviewed yet</h3>
+      <p>Complete the AI review for a client and they'll appear here.</p>
+    </div>`;
+    return;
+  }
+
+  let filtered = allClients.filter(c => {
+    const matchFilter = activeFilter === 'all' || scoreStatus(c.score) === activeFilter;
+    const matchSearch = !search ||
+      `${c.firstName} ${c.lastName} ${c.loanPurpose} ${c.employmentType}`.toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+
+  if (!filtered.length) {
+    body.innerHTML = `<div class="empty-dash"><div class="empty-icon">🔍</div><h3>No matches</h3><p>Try a different filter or search term.</p></div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map((c, i) => {
+    const st = scoreStatus(c.score);
+    const scoreClass = st === 'complete' ? 'high' : st === 'action' ? 'mid' : 'low';
+    const idx = allClients.indexOf(c);
+    const wsClass = workflowClass(c.status);
+    const emailLabel = c.lastEmailSent ? c.lastEmailSent : '—';
+    return `<div class="table-row" onclick="openModal(${idx})">
+      <div class="td">
+        <div class="td-name">${c.firstName} ${c.lastName}</div>
+        <div class="td-muted">${c.email || '—'}</div>
+      </div>
+      <div class="td td-muted">${c.loanPurpose || '—'}</div>
+      <div class="td td-score ${scoreClass}">${c.score}%</div>
+      <div class="td"><span class="status-pill ${st}">${statusLabel(st)}</span></div>
+      <div class="td" onclick="event.stopPropagation()">
+        <select class="status-select" onchange="updateStatus(${idx}, this.value)">
+          ${['Under Review','Docs Requested','Docs Received','Submitted to Lender','Approved','Declined'].map(s =>
+            `<option value="${s}" ${c.status === s ? 'selected' : ''}>${workflowEmoji(s)} ${s}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="td td-muted" style="font-size:12px">${emailLabel}</div>
+      <div class="td" style="display:flex;gap:8px;align-items:center" onclick="event.stopPropagation()">
+        <span class="td-action" onclick="openModal(${idx})">View →</span>
+        <span class="td-action" style="color:var(--red);opacity:0.5" onclick="confirmDelete(${idx}, event)">🗑</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openModal(idx) {
+  const c = allClients[idx];
+  if (!c) return;
+  document.getElementById('clientModal').dataset.idx = idx;
+  document.getElementById('modalName').textContent = `${c.firstName} ${c.lastName}`;
+  document.getElementById('modalMeta').textContent = `${c.loanPurpose} · ${c.employmentType} · Reviewed ${c.date}`;
+  const r = c.results;
+  const score = r.overallScore || 0;
+  const scoreClass = score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low';
+  const missingItems = (r.items||[]).filter(i => i.status === 'missing' || i.status === 'warn');
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+      <div class="score-ring ${scoreClass}" style="flex-shrink:0">${score}%</div>
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:19px;color:var(--navy)">${r.headline || ''}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:3px">${r.summary || ''}</div>
+      </div>
+    </div>
+    <div class="checklist" style="margin-bottom:20px">
+      ${(r.items||[]).map(item => {
+        const icon = item.status === 'ok' ? '✓' : item.status === 'warn' ? '!' : '✕';
+        return `<div class="check-item ${item.status}">
+          <div class="check-icon">${icon}</div>
+          <div class="check-body">
+            <div class="check-title">${item.title||item.docType}</div>
+            <div class="check-detail">${item.detail}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    ${r.brokerNote ? `<div class="notes-box" style="margin-bottom:20px"><h3>✦ Broker Notes</h3><p>${r.brokerNote}</p></div>` : ''}
+    <div style="background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Workflow Status</div>
+      <select class="status-select" style="width:100%;padding:10px 14px;font-size:14px" onchange="updateStatus(${idx}, this.value)">
+        ${['Under Review','Docs Requested','Docs Received','Submitted to Lender','Approved','Declined'].map(s =>
+          `<option value="${s}" ${c.status === s ? 'selected' : ''}>${workflowEmoji(s)} ${s}</option>`
+        ).join('')}
+      </select>
+      <div class="email-tracker ${c.lastEmailSent ? 'sent' : ''}" id="emailTracker">
+        📧 ${c.lastEmailSent ? `Last email sent: <strong>${c.lastEmailSent}</strong>` : 'No email sent yet'}
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      ${missingItems.length ? `<button class="btn btn-gold" style="flex:1" onclick="generateEmail(${idx})">📧 Generate Client Email</button>` : ''}
+      <button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="confirmDelete(${idx})">🗑 Delete Client</button>
+    </div>
+    <div id="emailOutput" style="margin-top:20px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:var(--navy)">📧 Client Email — ready to copy</div>
+        <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="copyEmail()">Copy</button>
+      </div>
+      <textarea id="emailText" rows="12" style="width:100%;padding:14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;line-height:1.7;resize:vertical;font-family:'DM Sans',sans-serif;color:var(--text)"></textarea>
+    </div>
+  `;
+  document.getElementById('clientModal').classList.add('open');
+}
+
+async function generateEmail(idx) {
+  const c = allClients[idx];
+  if (!c) return;
+  const r = c.results;
+  const missingItems = (r.items||[]).filter(i => i.status === 'missing' || i.status === 'warn');
+  const emailOutput = document.getElementById('emailOutput');
+  const emailText = document.getElementById('emailText');
+  emailOutput.style.display = 'block';
+  emailText.value = 'Generating email…';
+
+  const apiKey = localStorage.getItem('docready_api_key');
+  if (!apiKey) { emailText.value = 'No API key set. Please add it in Settings.'; return; }
+
+  const prompt = `You are an Australian mortgage broker writing a polite, professional email to a client asking them to provide outstanding documents.
+
+Client name: ${c.firstName} ${c.lastName}
+Loan purpose: ${c.loanPurpose}
+Employment type: ${c.employmentType}
+
+Outstanding documents needed:
+${missingItems.map(i => `- ${i.title || i.docType}: ${i.detail}`).join('\n')}
+
+Write a warm, professional email from the broker to the client. Include:
+- A friendly greeting using their first name
+- A brief explanation that you're progressing their ${c.loanPurpose} application
+- A clear numbered list of exactly what documents are needed and why
+- A friendly call to action asking them to reply with the documents
+- A professional sign-off
+
+Write ONLY the email body, no subject line, no extra explanation.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`API error ${response.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    if (!data.content) throw new Error('Empty response from API. Please try again.');
+    emailText.value = data.content.map(i => i.text || '').join('');
+
+    // Log email timestamp
+    const now = new Date();
+    const timestamp = now.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) + ' ' +
+      now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+    allClients[idx].lastEmailSent = timestamp;
+    if (allClients[idx].id) {
+      await updateClientField(allClients[idx].id, { 'Last Email Sent': timestamp });
+      // Auto-update status to Docs Requested
+      allClients[idx].status = 'Docs Requested';
+      await updateClientField(allClients[idx].id, { 'Status': 'Docs Requested' });
+    }
+    // Update tracker in modal
+    const tracker = document.getElementById('emailTracker');
+    if (tracker) {
+      tracker.className = 'email-tracker sent';
+      tracker.innerHTML = `📧 Last email sent: <strong>${timestamp}</strong>`;
+    }
+    // Refresh status dropdown in modal
+    const modalSelect = document.querySelector('#clientModal .status-select');
+    if (modalSelect) modalSelect.value = 'Docs Requested';
+  } catch (err) {
+    emailText.value = 'Error generating email: ' + err.message;
+  }
+}
+
+function copyEmail() {
+  const emailText = document.getElementById('emailText');
+  emailText.select();
+  navigator.clipboard.writeText(emailText.value).catch(() => {
+    document.execCommand('copy');
+  });
+  const btn = event.target;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+function confirmDelete(idx, e) {
+  if (e) e.stopPropagation();
+  const c = allClients[idx];
+  if (!c) return;
+  if (confirm(`Delete ${c.firstName} ${c.lastName}? This cannot be undone.`)) {
+    deleteClient(idx);
+  }
+}
+
+async function deleteClient(idx) {
+  const c = allClients[idx];
+  if (!c || !c.id) return;
+  await sbFetch(`/rest/v1/Clients?id=eq.${c.id}`, { method: 'DELETE' });
+  allClients.splice(idx, 1);
+  document.getElementById('clientModal').classList.remove('open');
+  renderDashboard();
+}
+
+function openSettings() {
+  const existing = localStorage.getItem('docready_api_key');
+  if (existing) {
+    document.getElementById('apiKeyInput').value = existing;
+    document.getElementById('apiKeyStatus').innerHTML = '<span style="color:var(--green)">✓ API key is set</span>';
+  }
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('apiKeyStatus').innerHTML = '<span style="color:var(--red)">✕ That doesn\'t look like a valid Anthropic key</span>';
+    return;
+  }
+  localStorage.setItem('docready_api_key', key);
+  document.getElementById('apiKeyStatus').innerHTML = '<span style="color:var(--green)">✓ Key saved successfully!</span>';
+  setTimeout(() => document.getElementById('settingsModal').classList.remove('open'), 1200);
+}
+
+function clearApiKey() {
+  localStorage.removeItem('docready_api_key');
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyStatus').innerHTML = '<span style="color:var(--muted)">Key cleared</span>';
+}
+
+function closeSettingsModal(e) {
+  if (e.target === document.getElementById('settingsModal')) {
+    document.getElementById('settingsModal').classList.remove('open');
+  }
+}
+
+// Show settings prompt if no key on load, and fetch clients
+window.addEventListener('load', () => {
+  loadClientsFromDb();
+  if (!localStorage.getItem('docready_api_key')) {
+    setTimeout(openSettings, 800);
+  }
+});
+
+function closeModal(e) {
+  if (e.target === document.getElementById('clientModal')) {
+    document.getElementById('clientModal').classList.remove('open');
+  }
+}
+
+function goToStep(n) {
+  document.querySelectorAll('.panel').forEach((p,i) => {
+    p.classList.toggle('active', i+1 === n);
+  });
+  document.querySelectorAll('.step-tab').forEach((t,i) => {
+    t.classList.remove('active','done');
+    if (i+1 < n) t.classList.add('done');
+    if (i+1 === n) t.classList.add('active');
+  });
+  // Mark done step nums as checkmarks
+  document.querySelectorAll('.step-tab.done .step-num').forEach(el => {
+    el.innerHTML = '✓';
+  });
+  document.querySelectorAll('.step-tab:not(.done) .step-num').forEach((el, i) => {
+    const overall = [...document.querySelectorAll('.step-tab')].indexOf(el.closest('.step-tab'));
+    if (!el.querySelector('.step-num-inner')) {
+      el.innerHTML = `<span class="step-num-inner">${overall+1}</span>`;
+    }
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function handleUpload(docType, input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  uploadedFiles[docType] = file;
+  const card = document.getElementById('card-' + docType);
+  const badge = document.getElementById('badge-' + docType);
+  const fname = document.getElementById('fname-' + docType);
+  card.classList.add('has-file');
+  badge.textContent = 'Uploaded';
+  badge.className = 'doc-badge badge-uploaded';
+  fname.querySelector('span').textContent = file.name;
+}
+
+async function startAnalysis() {
+  clientData = {
+    firstName: document.getElementById('firstName').value || 'Client',
+    lastName: document.getElementById('lastName').value || '',
+    email: document.getElementById('email').value || '—',
+    loanPurpose: document.getElementById('loanPurpose').value || 'Not specified',
+    employmentType: document.getElementById('employmentType').value || 'Not specified',
+    notes: document.getElementById('notes').value || ''
+  };
+
+  goToStep(3);
+  const dot = document.getElementById('aiDot');
+  const title = document.getElementById('aiTitle');
+  const sub = document.getElementById('aiSub');
+  const progress = document.getElementById('aiProgress');
+  const log = document.getElementById('aiLog');
+  const btn = document.getElementById('viewResultsBtn');
+
+  dot.className = 'ai-dot';
+  btn.disabled = true;
+  log.innerHTML = '';
+
+  const docTypes = [
+    { key: 'payslips', label: 'Payslips' },
+    { key: 'bank', label: 'Bank Statements' },
+    { key: 'tax', label: 'Tax Documents' },
+    { key: 'id', label: 'Photo ID' },
+    { key: 'employment', label: 'Employment Letter' }
+  ];
+
+  const steps = [
+    { pct: 10, msg: '⟳ Initialising document review…' },
+    { pct: 25, msg: '⟳ Checking uploaded files…' },
+    { pct: 45, msg: '⟳ Connecting to AI analysis engine…' },
+    { pct: 65, msg: '⟳ Reviewing document completeness…' },
+    { pct: 85, msg: '⟳ Generating broker summary…' },
+    { pct: 100, msg: '✓ Analysis complete' }
+  ];
+
+  for (const s of steps) {
+    await delay(700);
+    progress.style.width = s.pct + '%';
+    addLog(log, s.msg, s.pct === 100 ? 'ok' : '');
+  }
+
+  // Call Claude API
+  const uploadedList = docTypes
+    .map(d => `${d.label}: ${uploadedFiles[d.key] ? `YES — filename: ${uploadedFiles[d.key].name}` : 'NOT uploaded'}`)
+    .join('\n');
+
+  const prompt = `You are a mortgage document review assistant for an Australian mortgage broker. 
+
+Client details:
+- Name: ${clientData.firstName} ${clientData.lastName}
+- Loan Purpose: ${clientData.loanPurpose}
+- Employment Type: ${clientData.employmentType}
+- Broker Notes: ${clientData.notes || 'None'}
+
+Documents uploaded:
+${uploadedList}
+
+Review each document and return a JSON object ONLY (no markdown, no explanation) in this exact format:
+{
+  "overallScore": <number 0-100>,
+  "headline": "<short headline like 'Application Ready' or 'Documents Incomplete'>",
+  "summary": "<1 sentence overall summary for the broker>",
+  "items": [
+    {
+      "docType": "Payslips",
+      "status": "ok" | "warn" | "missing",
+      "title": "<document name>",
+      "detail": "<specific actionable note for the broker, e.g. what's missing, what to check, or confirmation it looks complete>"
+    }
+  ],
+  "brokerNote": "<2-3 sentence personalised broker note about this specific client, referencing their employment type and loan purpose, highlighting the biggest risk or next step>"
+}
+
+Rules:
+- If a document was NOT uploaded, status = "missing"
+- If a document was uploaded but may need attention based on their employment type (e.g. self-employed needs 2 years tax), status = "warn"  
+- If a document looks complete for their profile, status = "ok"
+- Be specific and practical — this is a real broker tool`;
+
+  try {
+    const apiKey = localStorage.getItem('docready_api_key');
+    if (!apiKey) {
+      throw new Error('No API key set. Please add your Anthropic API key in Settings (⚙ top right).');
+    }
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    if (!data.content) throw new Error('API response missing content. Raw: ' + JSON.stringify(data).slice(0, 200));
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    // Extract JSON object even if there's surrounding text
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Could not parse AI response: ' + clean.slice(0, 200));
+    analysisResults = JSON.parse(jsonMatch[0]);
+
+    title.textContent = '✓ Analysis Complete';
+    sub.textContent = 'Your document review is ready to view.';
+    dot.className = 'ai-dot done';
+    btn.disabled = false;
+
+    buildResults();
+
+  } catch (err) {
+    title.textContent = '⚠ Error during analysis';
+    sub.textContent = 'Please check your connection and try again.';
+    addLog(log, '✗ ' + err.message, 'err');
+  }
+}
+
+function buildResults() {
+  if (!analysisResults) return;
+  const r = analysisResults;
+  const score = r.overallScore || 0;
+
+  // Save to Supabase
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+  const clientRecord = {
+    ...clientData,
+    score,
+    date: dateStr,
+    results: r
+  };
+  allClients.unshift(clientRecord);
+  document.getElementById('navCount').textContent = allClients.length;
+  saveClientToDb(clientRecord).catch(err => console.error('Supabase save error:', err));
+
+  // Client bar
+  document.getElementById('clientBar').innerHTML = `
+    <div class="client-bar-item"><div class="client-bar-label">Client</div><div class="client-bar-val">${clientData.firstName} ${clientData.lastName}</div></div>
+    <div class="client-bar-divider"></div>
+    <div class="client-bar-item"><div class="client-bar-label">Loan Purpose</div><div class="client-bar-val">${clientData.loanPurpose}</div></div>
+    <div class="client-bar-divider"></div>
+    <div class="client-bar-item"><div class="client-bar-label">Employment</div><div class="client-bar-val">${clientData.employmentType}</div></div>
+    <div class="client-bar-divider"></div>
+    <div class="client-bar-item"><div class="client-bar-label">Email</div><div class="client-bar-val">${clientData.email}</div></div>
+  `;
+
+  // Score ring
+  const ring = document.getElementById('scoreRing');
+  ring.textContent = score + '%';
+  ring.className = 'score-ring ' + (score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low');
+
+  document.getElementById('resultHeadline').textContent = r.headline || 'Review Complete';
+  document.getElementById('resultSub').textContent = r.summary || '';
+
+  // Checklist
+  const list = document.getElementById('checklist');
+  list.innerHTML = '';
+  (r.items || []).forEach(item => {
+    const icon = item.status === 'ok' ? '✓' : item.status === 'warn' ? '!' : '✕';
+    list.innerHTML += `
+      <div class="check-item ${item.status}">
+        <div class="check-icon">${icon}</div>
+        <div class="check-body">
+          <div class="check-title">${item.title || item.docType}</div>
+          <div class="check-detail">${item.detail}</div>
+        </div>
+      </div>`;
+  });
+
+  // Broker note
+  if (r.brokerNote) {
+    document.getElementById('notesBox').style.display = 'block';
+    document.getElementById('notesBoxContent').textContent = r.brokerNote;
+  }
+}
+
+function addLog(container, msg, cls) {
+  const el = document.createElement('div');
+  el.className = 'ai-log-item ' + (cls || '');
+  el.textContent = msg;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function startNew() {
+  // Reset everything
+  Object.keys(uploadedFiles).forEach(k => delete uploadedFiles[k]);
+  ['payslips','bank','tax','id','employment'].forEach(docType => {
+    const card = document.getElementById('card-' + docType);
+    const badge = document.getElementById('badge-' + docType);
+    const fname = document.getElementById('fname-' + docType);
+    const fileInput = document.getElementById('file-' + docType);
+    card.classList.remove('has-file');
+    badge.textContent = 'Required';
+    badge.className = 'doc-badge badge-required';
+    fname.querySelector('span').textContent = '';
+    fileInput.value = '';
+  });
+  ['firstName','lastName','email','phone','notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('loanPurpose').value = '';
+  document.getElementById('employmentType').value = '';
+  analysisResults = null;
+  goToStep(1);
+}
+</script>
+</body>
+</html>
